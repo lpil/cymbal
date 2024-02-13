@@ -36,6 +36,46 @@ hello
   )
 }
 
+pub fn encode_yes_test() {
+  string("yes")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+\"yes\"
+",
+  )
+}
+
+pub fn encode_no_test() {
+  string("no")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+\"no\"
+",
+  )
+}
+
+pub fn encode_on_test() {
+  string("on")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+\"on\"
+",
+  )
+}
+
+pub fn encode_off_test() {
+  string("off")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+\"off\"
+",
+  )
+}
+
 pub fn encode_string_with_quote_test() {
   string("\"")
   |> cymbal.encode

@@ -7,6 +7,7 @@ import gleam/string
 ///
 pub opaque type Yaml {
   Int(Int)
+  Bool(Bool)
   Float(Float)
   String(String)
   Array(List(Yaml))
@@ -17,11 +18,17 @@ pub opaque type Yaml {
 ///
 pub fn encode(doc: Yaml) -> String {
   let start = case doc {
-    Int(_) | Float(_) | String(_) -> "---\n"
+    Bool(_) | Int(_) | Float(_) | String(_) -> "---\n"
     Array(_) | Block(_) -> "---"
   }
 
   en(start, 0, doc) <> "\n"
+}
+
+/// Create a YAML document from a bool.
+///
+pub fn bool(i: Bool) -> Yaml {
+  Bool(i)
 }
 
 /// Create a YAML document from an int.
@@ -56,6 +63,8 @@ pub fn block(i: List(#(String, Yaml))) -> Yaml {
 
 fn en(acc: String, in: Int, doc: Yaml) -> String {
   case doc {
+    Bool(True) -> acc <> "true"
+    Bool(False) -> acc <> "false"
     Int(i) -> acc <> int.to_string(i)
     Float(i) -> acc <> float.to_string(i)
     String(i) -> en_string(acc, i)
@@ -73,7 +82,7 @@ fn en_array(acc: String, in: Int, docs: List(Yaml)) -> String {
         |> string.append("\n")
         |> indent(in)
       let acc = case doc {
-        Int(_) | Float(_) | String(_) -> en(acc <> "- ", in + 1, doc)
+        Bool(_) | Int(_) | Float(_) | String(_) -> en(acc <> "- ", in + 1, doc)
         Array(_) -> en(acc <> "-", in + 1, doc)
         Block(docs) -> en_block(acc <> "- ", in + 1, False, docs)
       }
@@ -107,7 +116,7 @@ fn en_block(
 
 fn block_child(acc: String, in: Int, doc: Yaml) -> String {
   case doc {
-    Int(_) | Float(_) | String(_) -> en(acc <> ": ", in, doc)
+    Bool(_) | Int(_) | Float(_) | String(_) -> en(acc <> ": ", in, doc)
     Array(_) -> en(acc <> ":", in, doc)
     Block(i) -> en_block(acc <> ":", in + 1, True, i)
   }
@@ -119,6 +128,7 @@ fn indent(acc: String, i: Int) -> String {
 
 fn is_simple_string(s: String) -> Bool {
   case s {
+    "yes" | "no" | "on" | "off" -> False
     "0" <> _
     | "1" <> _
     | "2" <> _
