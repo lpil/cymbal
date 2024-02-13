@@ -15,13 +15,13 @@ pub opaque type Yaml {
 
 /// Convert a YAML document into a string.
 ///
-pub fn encode(document: Yaml) -> String {
-  let start = case own_line(document) {
-    True -> "---"
-    False -> "---\n"
+pub fn encode(doc: Yaml) -> String {
+  let start = case doc {
+    Int(_) | Float(_) | String(_) -> "---\n"
+    Array(_) | Block(_) -> "---"
   }
 
-  en(start, 0, document) <> "\n"
+  en(start, 0, doc) <> "\n"
 }
 
 /// Create a YAML document from an int.
@@ -60,40 +60,56 @@ fn en(acc: String, in: Int, doc: Yaml) -> String {
     Float(i) -> acc <> float.to_string(i)
     String(i) -> en_string(acc, i)
     Array(i) -> en_array(acc, in, i)
-    Block(i) -> en_block(acc, in, i)
+    Block(i) -> en_block(acc, in, True, i)
   }
 }
 
 fn en_array(acc: String, in: Int, docs: List(Yaml)) -> String {
   case docs {
     [] -> acc
-    [doc, ..docs] ->
-      acc
-      |> string.append("\n")
-      |> indent(in)
-      |> string.append(case own_line(doc) {
-        True -> "-"
-        False -> "- "
-      })
-      |> en(in + 1, doc)
-      |> en_array(in, docs)
+    [doc, ..docs] -> {
+      let acc =
+        acc
+        |> string.append("\n")
+        |> indent(in)
+      let acc = case doc {
+        Int(_) | Float(_) | String(_) -> en(acc <> "- ", in + 1, doc)
+        Array(_) -> en(acc <> "-", in + 1, doc)
+        Block(docs) -> en_block(acc <> "- ", in + 1, False, docs)
+      }
+      en_array(acc, in, docs)
+    }
   }
 }
 
-fn en_block(acc: String, in: Int, docs: List(#(String, Yaml))) -> String {
+fn en_block(
+  acc: String,
+  in: Int,
+  newline: Bool,
+  docs: List(#(String, Yaml)),
+) -> String {
   case docs {
     [] -> acc
-    [#(name, doc), ..docs] ->
+    [#(name, doc), ..docs] if newline ->
       acc
       |> string.append("\n")
       |> indent(in)
       |> en_string(name)
-      |> string.append(case own_line(doc) {
-        True -> ":"
-        False -> ": "
-      })
-      |> en(in + 1, doc)
-      |> en_block(in, docs)
+      |> block_child(in, doc)
+      |> en_block(in, True, docs)
+    [#(name, doc), ..docs] ->
+      acc
+      |> en_string(name)
+      |> block_child(in, doc)
+      |> en_block(in, True, docs)
+  }
+}
+
+fn block_child(acc: String, in: Int, doc: Yaml) -> String {
+  case doc {
+    Int(_) | Float(_) | String(_) -> en(acc <> ": ", in, doc)
+    Array(_) -> en(acc <> ":", in, doc)
+    Block(i) -> en_block(acc <> ":", in + 1, True, i)
   }
 }
 
@@ -182,7 +198,8 @@ fn is_simple_string_rest(s: String) -> Bool {
     | "X" <> s
     | "Y" <> s
     | "Z" <> s
-    | "_" <> s -> is_simple_string_rest(s)
+    | "_" <> s
+    | "-" <> s -> is_simple_string_rest(s)
     _ -> False
   }
 }
@@ -203,11 +220,4 @@ fn en_quoted_string(acc: String, i: String) -> String {
     |> string.replace("\"", "\\\"")
   }
   <> "\""
-}
-
-fn own_line(doc: Yaml) -> Bool {
-  case doc {
-    Int(_) | Float(_) | String(_) -> False
-    Array(_) | Block(_) -> True
-  }
 }

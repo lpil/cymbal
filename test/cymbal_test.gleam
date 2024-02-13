@@ -36,16 +36,6 @@ hello
   )
 }
 
-pub fn encode_dash_string_test() {
-  string("hello-world")
-  |> cymbal.encode
-  |> should.equal(
-    "---
-\"hello-world\"
-",
-  )
-}
-
 pub fn encode_string_with_quote_test() {
   string("\"")
   |> cymbal.encode
@@ -183,6 +173,44 @@ nested1:
   it5: 5
 it6: 6
 it7: 7
+",
+  )
+}
+
+pub fn k8s_pod_test() {
+  block([
+    #("apiVersion", string("v1")),
+    #("kind", string("Pod")),
+    #("metadata", block([#("name", string("example-pod"))])),
+    #(
+      "spec",
+      block([
+        #(
+          "containers",
+          array([
+            block([
+              #("name", string("example-container")),
+              #("image", string("nginx")),
+              #("ports", array([block([#("containerPort", int(80))])])),
+            ]),
+          ]),
+        ),
+      ]),
+    ),
+  ])
+  |> cymbal.encode
+  |> should.equal(
+    "---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: example-pod
+spec:
+  containers:
+  - name: example-container
+    image: nginx
+    ports:
+    - containerPort: 80
 ",
   )
 }
