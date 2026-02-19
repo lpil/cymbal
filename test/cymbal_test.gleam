@@ -96,6 +96,46 @@ pub fn encode_string_with_escaped_quote_test() {
   )
 }
 
+pub fn encode_negative_number_string_test() {
+  string("-1")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+\"-1\"
+",
+  )
+}
+
+pub fn encode_negative_number_string_large_test() {
+  string("-123")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+\"-123\"
+",
+  )
+}
+
+pub fn encode_negative_float_string_test() {
+  string("-3.14")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+\"-3.14\"
+",
+  )
+}
+
+pub fn encode_dash_prefix_simple_string_test() {
+  string("-abc")
+  |> cymbal.encode
+  |> should.equal(
+    "---
+-abc
+",
+  )
+}
+
 pub fn encode_array_test() {
   array([
     int(1),
