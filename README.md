@@ -8,11 +8,12 @@ Build YAML in Gleam!
 ```sh
 gleam add cymbal
 ```
+
 ```gleam
 import cymbal.{block, array, string, int}
 
 pub fn main() {
-  let document = 
+  let document =
     block([
       #("apiVersion", string("v1")),
       #("kind", string("Pod")),
